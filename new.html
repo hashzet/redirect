@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infantry Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --tooltip-bg-color: rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        body.dark-mode {
+            background-color: #333;
+            color: #FFA500; /* Default text color for dark mode */
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #006400;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode #header {
+            background-color: #000;
+        }
+
+        #header .title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #header .actions {
+            display: flex;
+            align-items: center;
+        }
+
+        #header .actions label,
+        #header .actions input[type="file"] {
+            background-color: #f4f4f9;
+            color: #006400;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+        }
+
+        body.dark-mode #header .actions label {
+            background-color: #333;
+            color: #fff;
+        }
+
+        #main-content {
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 800px;
+            margin: 20px auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode canvas {
+            border: 1px solid #555;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+        }
+
+        .sheet-section {
+            margin-bottom: 50px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .sheet-section {
+            background-color: #444;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+        }
+
+        .sheet-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #006400;
+        }
+
+        body.dark-mode .sheet-title {
+            color: #fff;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin: 20px;
+        }
+
+        body.dark-mode select {
+            background-color: #555;
+            color: #fff;
+            border: 1px solid #777;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div class="dark-mode-toggle title">INFANTRY DASHBOARD</div>
+        <div class="actions">
+            <input type="file" id="file-upload" accept=".xlsx, .xls">
+            <button class="toggle-darkmode" onclick="toggleDarkMode()">🌙</button>
+
+        </div>
+    </div>
+    <div id="main-content">
+        <select id="pasukan-select">
+            <option value="">Select Pasukan</option>
+        </select>
+        <div id="dashboardContainer"></div>
+    </div>
+    <script>
+        let allData = [];
+        let selectedPasukan = '';
+
+        document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+        document.getElementById('pasukan-select').addEventListener('change', handlePasukanChange);
+        document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                processWorkbook(workbook);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handlePasukanChange(event) {
+            selectedPasukan = event.target.value;
+            generateDashboard();
+        }
+
+        function processWorkbook(workbook) {
+            allData = [];
+            workbook.SheetNames.forEach(sheetName => {
+                const sheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                allData.push({ sheetName, data: json });
+            });
+            populatePasukanDropdown();
+            generateDashboard();
+        }
+
+        function populatePasukanDropdown() {
+            const pasukanSet = new Set();
+            allData.forEach(sheet => {
+                sheet.data.slice(1).forEach(row => {
+                    if (row[0]) pasukanSet.add(row[0]); // Assuming first column is 'Pasukan'
+                });
+            });
+            const pasukanSelect = document.getElementById('pasukan-select');
+            pasukanSelect.innerHTML = '<option value="">Select Pasukan</option>';
+            pasukanSet.forEach(pasukan => {
+                const option = document.createElement('option');
+                option.value = pasukan;
+                option.textContent = pasukan;
+                pasukanSelect.appendChild(option);
+            });
+        }
+
+        function generateDashboard() {
+            const dashboardContainer = document.getElementById('dashboardContainer');
+            dashboardContainer.innerHTML = ''; // Clear previous content
+
+            allData.forEach(sheet => {
+                generateChartsForSheet(sheet.sheetName, sheet.data);
+            });
+        }
+
+        function isValidRow(row) {
+            return row.length >= 6 && (!selectedPasukan || row[0] === selectedPasukan) && row[3] !== 0;
+        }
+
+        function generateChartsForSheet(sheetName, data) {
+            const headers = data[0];
+            const rows = data.slice(1);
+
+            const filteredRows = rows.filter(row => isValidRow(row));
+            const groupedData = {};
+            const catatanData = {};
+            filteredRows.forEach(row => {
+                const kategori = row[1]; 
+                const jenis = row[2];
+                const perjawatan = +row[3] || 0; 
+                const pegangan = +row[4] || 0; 
+                const catatan = row.length >= 7 ? row[6] : '';
+                if (!groupedData[kategori]) groupedData[kategori] = { perjawatan: {}, pegangan: {} };
+                if (!catatanData[jenis]) catatanData[jenis] = catatan;
+                groupedData[kategori].perjawatan[jenis] = (groupedData[kategori].perjawatan[jenis] || 0) + perjawatan;
+                groupedData[kategori].pegangan[jenis] = (groupedData[kategori].pegangan[jenis] || 0) + pegangan;
+            });
+
+            const categories = Object.keys(groupedData);
+            let jenisLabels = [...new Set(filteredRows.map(row => row[2]))];
+
+            const jenisSums = {};
+            jenisLabels.forEach(jenis => {
+                jenisSums[jenis] = categories.reduce((sum, kategori) => sum + (groupedData[kategori].perjawatan[jenis] || 0), 0);
+            });
+
+            jenisLabels.sort((a, b) => jenisSums[b] - jenisSums[a]);
+
+            const perjawatanDataset = {
+                label: 'Perjawatan',
+                data: jenisLabels.map(jenis => categories.reduce((sum, kategori) => sum + (groupedData[kategori].perjawatan[jenis] || 0), 0)),
+                backgroundColor: 'rgba(0, 100, 0, 0.7)',
+                borderWidth: 1,
+                borderColor: 'rgba(75, 192, 192, 1)',
+            };
+            const peganganDataset = {
+                label: 'Pegangan',
+                data: jenisLabels.map(jenis => categories.reduce((sum, kategori) => sum + (groupedData[kategori].pegangan[jenis] || 0), 0)),
+                backgroundColor: 'rgba(139, 0, 0, 0.7)',
+                borderRadius: 5,
+                borderWidth: 1,
+                borderColor: 'rgba(153, 102, 255, 1)',
+            };
+
+            const sheetSection = document.createElement('div');
+            sheetSection.className = 'sheet-section';
+            sheetSection.innerHTML = `<div class="sheet-title">${sheetName}</div>`;
+            dashboardContainer.appendChild(sheetSection);
+
+            const barCanvas = document.createElement('canvas');
+            barCanvas.width = 800;
+            barCanvas.height = 400;
+            sheetSection.appendChild(barCanvas);
+            new Chart(barCanvas.getContext('2d'), getChartConfig(jenisLabels, perjawatanDataset, peganganDataset, catatanData));
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            generateDashboard(); // Regenerate charts after dark mode toggle
+        }
+
+        function getChartConfig(jenisLabels, perjawatanDataset, peganganDataset, catatanData) {
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            return {
+                type: 'bar',
+                data: {
+                    labels: jenisLabels,
+                    datasets: [perjawatanDataset, peganganDataset],
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    color: isDarkMode ? 'orange' : '#333',
+                    datalabels: getDataLabelsConfig(),
+                    plugins: {
+                        tooltip: getTooltipConfig(catatanData),
+                    },
+                    scales: getScalesConfig(isDarkMode),
+                }
+            };
+        }
+
+        function getTooltipConfig(catatanData) {
+            return {
+                callbacks: {
+                    label: function(context) {
+                        const jenis = context.label;
+                        const value = context.raw;
+                        if (context.dataset.label === 'Pegangan') {
+                            const catatan = catatanData[jenis] || '';
+                            return `${context.dataset.label}: ${value} (${catatan})`;
+                        }
+                        return `${context.dataset.label}: ${value}`;
+                    }
+                },
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--tooltip-bg-color'),
+                titleColor: 'white',
+                bodyColor: 'white',
+                cornerRadius: 5,
+                padding: 10,
+            };
+        }
+
+        function getDataLabelsConfig() {
+            return {
+                color: '#fff',
+                font: {
+                    size: 10,
+                    family: 'Arial, sans-serif',
+                },
+                formatter: function(value) {
+                    return value;
+                },
+                position: 'inside',
+                align: 'center',
+            };
+        }
+
+        function getScalesConfig(isDarkMode) {
+            const color = isDarkMode ? 'orange' : '#333';
+            return {
+                x: {
+                    ticks: {
+                        color: color,
+                    },
+                },
+                y: {
+                    ticks: {
+                        color: color,
+                    },
+                },
+            };
+        }
+    </script>
+</body>
+</html>
