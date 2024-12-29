@@ -1,8 +1,162 @@
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=https://santapan-mr-ramd90.glide.page"/>
-  </head>
-  <body>
-    <p>Redirecting...</p>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Module</title>
+    <style>
+        /* Prevent text selection */
+        body, html {
+            user-select: none;
+        }
+
+        /* Additional styles for the login form */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: #fff;
+            padding: 90px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 20px;
+            color: #006400;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #006400;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #004d00;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .success {
+            color: green;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-darkmode {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #006400;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        body.dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+
+        body.dark-mode .login-container {
+            background-color: #444;
+            color: #fff;
+        }
+
+        body.dark-mode input[type="text"], body.dark-mode input[type="password"] {
+            background-color: #555;
+            color: #fff;
+            border: 1px solid #777;
+        }
+
+        body.dark-mode input[type="submit"] {
+            background-color: #004d00;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-darkmode" onclick="toggleDarkMode()">🌙</button>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <div class="error" id="error-message"></div>
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <input type="submit" value="Login">
+            <div class="success" id="success-message"></div>
+        </form>
+    </div>
+
+    <script>
+        const validUsername = 'admin'; // Hardcoded username
+        const validPassword = 'password123'; // Hardcoded password
+
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form from submitting
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Reset error and success messages
+            document.getElementById('error-message').textContent = '';
+            document.getElementById('success-message').textContent = '';
+            
+            if (username === validUsername && password === validPassword) {
+                document.getElementById('success-message').textContent = 'Login successful!';
+                document.getElementById('success-message').style.color = 'green';
+                // Redirect or show next page
+                setTimeout(() => {
+                    window.location.href = 'new.html'; // Redirect to a dashboard or another page
+                }, 1000);
+            } else {
+                document.getElementById('error-message').textContent = 'Invalid username or password.';
+                document.getElementById('error-message').style.color = 'red';
+            }
+        });
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        // Disable right-click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            alert("Right-click is disabled.");
+        });
+    </script>
+</body>
 </html>
+
