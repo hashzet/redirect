@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Profiles</title>
+    <title>Lembaga KPSM dan TLN Tahun 2026</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -156,9 +156,9 @@
         }
 
         .profile-header img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+            border-radius: 5%;
             margin-right: 1.5rem;
             object-fit: cover;
         }
@@ -299,15 +299,15 @@
             const sections = [
                 {
                     title: 'Jawatan & Pasukan',
-                    fields: ['JAWATAN_SEKARANG', 'PASUKAN', 'TAHUN_DI_PSK']
+                    fields: ['JAWATAN', 'PASUKAN', 'TAHUN_DI_PSK']
                 },
                 {
                     title: 'Maklumat Perkhidmatan',
-                    fields: ['MULA_KHIDMAT', 'TARIKH_TAULIAH', 'TAHUN_KHIDMAT']
+                    fields: ['MULA_KHIDMAT', 'TARIKH_TAULIAH', 'TAHUN_KHIDMAT', 'CATATAN']
                 },
                 {
                     title: 'Maklumat Peribadi',
-                    fields: ['DOB', 'UMUR', 'TEMPAT_LAHIR', 'STATUS', 'AKADEMIK']
+                    fields: ['TARIKH_LAHIR', 'UMUR', 'TEMPAT_LAHIR', 'STATUS', 'AKADEMIK']
                 }
             ];
 
@@ -324,11 +324,11 @@
                     },
                     {
                         title: 'G3',
-                        value: formatQualification(profile, 'SIRI_G3', 'KED_G3', 'GRED_G3')
+                        value: 'Siri ' + formatQualification(profile, 'SIRI_G3', 'KED_G3', 'GRED_G3')
                     },
                     {
                         title: 'Ketua Kompeni',
-                        value: formatQualification(profile, 'SIRI_KK', 'KED_KK', 'GRED_KK')
+                        value: 'Siri ' + formatQualification(profile, 'SIRI_KK', 'KED_KK', 'GRED_KK')
                     },
                     {
                         title: 'Kursus Lain',
@@ -393,60 +393,60 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Speech (75%)
+                            Comm Skill (10%)
                         </label>
                         <input type="range"
                                class="evaluation-slider"
                                id="speech-slider"
                                min="0"
-                               max="100"
-                               value="75"
+                               max="10"
+                               value="0"
                                oninput="updateSliderValue(this, 'speech-value')">
-                        <span id="speech-value" class="text-sm text-gray-500">75%</span>
+                        <span id="speech-value" class="text-sm text-gray-500">0%</span>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Appearance (75%)
+                            Appearance (10%)
                         </label>
                         <input type="range"
                                class="evaluation-slider"
                                id="appearance-slider"
                                min="0"
-                               max="100"
-                               value="75"
+                               max="10"
+                               value="0"
                                oninput="updateSliderValue(this, 'appearance-value')">
-                        <span id="appearance-value" class="text-sm text-gray-500">75%</span>
+                        <span id="appearance-value" class="text-sm text-gray-500">0%</span>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Idea (75%)
+                            Idea/Knowledge (10%)
                         </label>
                         <input type="range"
                                class="evaluation-slider"
                                id="idea-slider"
                                min="0"
-                               max="100"
-                               value="75"
+                               max="10"
+                               value="0"
                                oninput="updateSliderValue(this, 'idea-value')">
-                        <span id="idea-value" class="text-sm text-gray-500">75%</span>
+                        <span id="idea-value" class="text-sm text-gray-500">0%</span>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Confidence (75%)
+                            Confidence (10%)
                         </label>
                         <input type="range"
                                class="evaluation-slider"
                                id="confidence-slider"
                                min="0"
-                               max="100"
-                               value="75"
+                               max="10"
+                               value="0"
                                oninput="updateSliderValue(this, 'confidence-value')">
-                        <span id="confidence-value" class="text-sm text-gray-500">75%</span>
+                        <span id="confidence-value" class="text-sm text-gray-500">0%</span>
                     </div>
                 </div>
             </div>
@@ -468,7 +468,7 @@
 
                         <label class="checkbox-wrapper">
                             <input type="checkbox" id="local-checkbox" onchange="checkFormValidity()">
-                            <span class="text-sm font-medium text-gray-700">Local</span>
+                            <span class="text-sm font-medium text-gray-700">KPSM</span>
                         </label>
 
                         <label class="checkbox-wrapper">
@@ -487,16 +487,16 @@
             `;
 
             profilesContainer.innerHTML = `
-                <div class="profile-card p-8">
-                    <div class="profile-header">
-                        <img src="${profile.ImageURL}" alt="${profile.NAMA_PENUH}">
-                        <h1>${profile.NAMA_PENUH}</h1>
-                    </div>
-                    ${sectionsHTML}
-                    ${qualificationsHTML}
-                    ${evaluationHTML}
-                </div>
-            `;
+    <div class="profile-card p-8">
+        <div class="profile-header">
+            <img src="${profile.ImageURL}" alt="${profile.NAMA_PENUH}" class="w-64 h-64 object-cover">
+            <h2>${profile.NAMA_PENUH}</h2>
+        </div>
+        ${sectionsHTML}
+        ${qualificationsHTML}
+        ${evaluationHTML}
+    </div>
+`;
 
             prevBtn.disabled = currentIndex === 0;
             nextBtn.disabled = currentIndex === profiles.length - 1;
