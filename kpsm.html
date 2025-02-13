@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,6 +169,52 @@
             font-weight: 600;
             color: #333;
         }
+         .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            color: white;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .menu-section {
+            margin-bottom: 2rem;
+        }
+
+        .menu-header {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+        /* Add these to your existing styles */
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
     </style>
 </head>
 <body class="min-h-screen">
@@ -191,14 +238,35 @@
                 </select>
                 <span id="clearExaminer" class="clear-examiner" title="Clear selection">&times;</span>
             </div>
-            <nav>
-                <ul id="groupList" class="space-y-2">
-                    <!-- Groups will be added here -->
-                </ul>
-            </nav>
+
+            <!-- Menu section -->
+            <div class="menu-section">
+                <h3 class="menu-header">MENU</h3>
+                <div id="mainMenu">
+                    <div class="menu-item" data-page="home">
+                        <span>Home</span>
+                    </div>
+                    <div class="menu-item" data-page="result">
+                        <span>Result</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modified Groups section -->
+            <div class="menu-section">
+                <h3 class="menu-header">KOR</h3>
+                <nav id="korList" class="space-y-2">
+                    <!-- Kor groups will be added here -->
+                </nav>
+            </div>
         </div>
 
         <main class="flex-1 ml-72 p-8">
+            <div id="homeContent" class="hidden">
+                <div class="flex justify-center items-center h-screen">
+                    <img src="https://i.ibb.co/mWJsy8N/Untitled-design-7.png" alt="Home Logo" class="max-w-xl">
+                </div>
+            </div>
             <div id="profilesContainer" class="max-w-4xl mx-auto">
                 <!-- Profiles will be added here -->
             </div>
@@ -215,6 +283,7 @@
     </div>
 
     <script>
+        let filteredProfiles = [];
         let selectedExaminer = '';
         const examinerSelect = document.getElementById('examinerSelect');
         const clearExaminer = document.getElementById('clearExaminer');
@@ -256,36 +325,147 @@
         let currentGroup = '';
 
         async function fetchData() {
-            const response = await fetch('https://script.google.com/macros/s/AKfycby1-ScNCS3MQyoOTfvAYLqzjJ0qAIB6f2P1P-RUDfEZ4YhbYqzcRjRjSQQucr140_ts/exec');
+            const response = await fetch('https://script.google.com/macros/s/AKfycbyFZCjZqNHZ0nlk4ZE7qJkHtFFwsHQDqwney7G_yP3uew3DuwOb9T48-T6m75a1T8UM/exec');
             const data = await response.json();
             profiles = data;
-            displayGroups(data);
-            displayProfile(0);
+            displayKorGroups(data);
+            showHomePage(); // Show home page by default
         }
 
-        function displayGroups(data) {
-            const groups = [...new Set(data.map(item => item.NO_KUMP))];
-            groupList.innerHTML = groups.map(group =>
-                `<li>
-                    <a href="#" class="sidebar-link block text-sm font-medium" data-group="${group}">
-                        ${group}
-                    </a>
-                </li>`
-            ).join('');
+        function showHomePage() {
+            document.getElementById('homeContent').classList.remove('hidden');
+            document.getElementById('profilesContainer').classList.add('hidden');
+            document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+            currentGroup = '';
+            filteredProfiles = [];
+        }
 
-            document.querySelectorAll('.sidebar-link').forEach(link => {
-                link.addEventListener('click', event => {
-                    event.preventDefault();
-                    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active-link'));
-                    link.classList.add('active-link');
-                    const group = event.target.getAttribute('data-group');
-                    currentGroup = group;
-                    currentIndex = profiles.findIndex(profile => profile.NO_KUMP === group);
-                    groupTitle.textContent = `LEMBAGA PENCALONAN KPSM/TLN 2026 ${group}`;
-                    displayProfile(currentIndex);
+        function displayKorGroups(data) {
+            // Get unique KOR values
+            const kors = [...new Set(data.map(item => item.KOR))];
+            const korList = document.getElementById('korList');
+            
+            // Clear existing content
+            korList.innerHTML = '';
+            
+            // Create sections for each KOR
+            kors.forEach(kor => {
+                // Get groups specific to this KOR
+                const korGroups = [...new Set(data
+                    .filter(item => item.KOR === kor)
+                    .map(item => item.NO_KUMP))]
+                    .sort((a, b) => {
+                        // Extract numbers from strings and compare
+                        const numA = parseInt(a.match(/\d+/)[0]);
+                        const numB = parseInt(b.match(/\d+/)[0]);
+                        return numA - numB;
+                    });
+                
+                const korSection = document.createElement('div');
+                korSection.className = 'mb-4';
+                
+                // Create KOR header button
+                const korHeader = document.createElement('div');
+                korHeader.className = 'menu-item';
+                korHeader.innerHTML = `
+                    <span class="flex-1">${kor}</span>
+                    <span class="text-sm text-gray-300">(${korGroups.length})</span>
+                `;
+                
+                // Create container for groups
+                const groupsList = document.createElement('div');
+                groupsList.className = 'ml-4 hidden space-y-1 mt-2';
+                groupsList.setAttribute('data-kor', kor);
+                
+                // Add groups for this KOR
+                korGroups.forEach(group => {
+                    const groupItem = document.createElement('div');
+                    groupItem.className = 'menu-item text-sm';
+                    
+                    // Count members in this group
+                    const membersCount = data.filter(profile => 
+                        profile.KOR === kor && profile.NO_KUMP === group
+                    ).length;
+                    
+                    groupItem.innerHTML = `
+                        <span class="flex-1">${group}</span>
+                        <span class="text-xs text-gray-300">${membersCount} members</span>
+                    `;
+                    
+                    groupItem.addEventListener('click', () => {
+                        // Hide home content
+                        document.getElementById('homeContent').classList.add('hidden');
+                        document.getElementById('profilesContainer').classList.remove('hidden');
+                        document.querySelector('.flex.justify-center.gap-4.mt-8').classList.remove('hidden');
+                        
+                        // Update current group and filtered profiles
+                        currentGroup = group;
+                        // Filter by both KOR and NO_KUMP
+                        filteredProfiles = data.filter(profile => 
+                            profile.KOR === kor && profile.NO_KUMP === group
+                        );
+                        currentIndex = 0;
+                        
+                        // Update title and display first profile
+                        groupTitle.textContent = `LEMBAGA PENCALONAN KPSM/TLN 2026 ${kor} ${group}`;
+                        displayProfile(currentIndex);
+                        
+                        // Update active states
+                        document.querySelectorAll('.menu-item').forEach(item => 
+                            item.classList.remove('active')
+                        );
+                        groupItem.classList.add('active');
+                    });
+                    
+                    groupsList.appendChild(groupItem);
                 });
+                
+                // Toggle groups visibility when KOR header is clicked
+                korHeader.addEventListener('click', (e) => {
+                    // Hide all other group lists
+                    document.querySelectorAll('[data-kor]').forEach(el => {
+                        if (el !== groupsList) {
+                            el.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Toggle this group list
+                    groupsList.classList.toggle('hidden');
+                    
+                    // Update active states
+                    document.querySelectorAll('.menu-item').forEach(item => 
+                        item.classList.remove('active')
+                    );
+                    korHeader.classList.add('active');
+                });
+                
+                korSection.appendChild(korHeader);
+                korSection.appendChild(groupsList);
+                korList.appendChild(korSection);
             });
+        
+            // Add home button functionality
+            const homeButton = document.querySelector('[data-page="home"]');
+            if (homeButton) {
+                homeButton.addEventListener('click', () => {
+                    document.getElementById('homeContent').classList.remove('hidden');
+                    document.getElementById('profilesContainer').classList.add('hidden');
+                    document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+                    
+                    // Reset current group and filtered profiles
+                    currentGroup = '';
+                    filteredProfiles = [];
+                    
+                    // Update active states
+                    document.querySelectorAll('.menu-item').forEach(item => 
+                        item.classList.remove('active')
+                    );
+                    homeButton.classList.add('active');
+                });
+            }
         }
+        
+
 
         function formatQualification(profile, mainField, kedField, gredField) {
             const mainValue = profile[mainField] || '-';
@@ -295,7 +475,9 @@
         }
 
         function displayProfile(index) {
-            const profile = profiles[index];
+            const profilesToUse = currentGroup ? filteredProfiles : profiles;
+            const profile = profilesToUse[index];
+            
             const sections = [
                 {
                     title: 'Jawatan & Pasukan',
@@ -303,7 +485,7 @@
                 },
                 {
                     title: 'Maklumat Perkhidmatan',
-                    fields: ['MULA_KHIDMAT', 'TARIKH_TAULIAH', 'TAHUN_KHIDMAT', 'CATATAN']
+                    fields: ['MULA_KHIDMAT', 'TARIKH_TAULIAH', 'TAHUN_KHIDMAT', 'PENGAMBILAN', 'CATATAN']
                 },
                 {
                     title: 'Maklumat Peribadi',
@@ -489,6 +671,9 @@
 
             profilesContainer.innerHTML = `
     <div class="profile-card p-8">
+        <div class="profile-header text-center mb-4">
+            <h3 class="text-lg-center font-bold">${profile.KOR} - ${profile.NO_KUMP} - Nombor Indeks: ${profile.NO_INDEKS}</h3>
+        </div>
         <div class="profile-header">
             <img src="${profile.ImageURL}" alt="${profile.NAMA_PENUH}" class="w-64 h-64 object-cover">
             <h2>${profile.NAMA_PENUH}</h2>
@@ -500,8 +685,31 @@
 `;
 
             prevBtn.disabled = currentIndex === 0;
-            nextBtn.disabled = currentIndex === profiles.length - 1;
+            nextBtn.disabled = currentIndex === profilesToUse.length - 1;
         }
+
+        // Add menu functionality
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove active class from all menu items
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                // Add active class to clicked item
+                item.classList.add('active');
+                
+                const page = item.getAttribute('data-page');
+                switch(page) {
+                    case 'home':
+                        currentGroup = '';
+                        filteredProfiles = [];
+                        currentIndex = 0;
+                        displayProfile(currentIndex);
+                        break;
+                    case 'result':
+                        // Implement result page functionality here
+                        break;
+                }
+            });
+        });
 
         function updateSliderValue(slider, valueId) {
             const value = slider.value;
@@ -526,46 +734,49 @@
         }
 
         async function saveEvaluation() {
-    if (!selectedExaminer) {
-        alert('Please select an examiner profile before saving evaluation.');
-        return;
-    }
-
-    const currentProfile = profiles[currentIndex];
-    const evaluationData = {
-        examiner: selectedExaminer,
-        name: currentProfile.NAMA,
-        speech: document.getElementById('speech-slider').value,
-        appearance: document.getElementById('appearance-slider').value,
-        idea: document.getElementById('idea-slider').value,
-        confidence: document.getElementById('confidence-slider').value,
-        comments: document.getElementById('evaluation-comments').value,
-        tln: document.getElementById('tln-checkbox').checked,
-        local: document.getElementById('local-checkbox').checked,
-        fail: document.getElementById('fail-checkbox').checked,
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbwQztcAfRwRADBZqV3AKszHZs45H1OC6S5rzoavK8B86mYORECB93wZu084kN2eskaA/exec', {
-            method: 'POST',
-            body: JSON.stringify(evaluationData)
-        });
-
-        if (response.ok) {
-            alert('Evaluation saved successfully!');
-            if (currentIndex < profiles.length - 1) {
-                currentIndex++;
-                displayProfile(currentIndex);
+            if (!selectedExaminer) {
+                alert('Please select an examiner profile before saving evaluation.');
+                return;
             }
-            resetEvaluationForm();
-        } else {
-            throw new Error('Failed to save evaluation');
+        
+            const currentProfile = currentGroup ? filteredProfiles[currentIndex] : profiles[currentIndex];
+            const evaluationData = {
+                examiner: selectedExaminer,
+                name: currentProfile.NAMA_PENUH,  // Changed from NAMA to NAMA_PENUH
+                kor: currentProfile.KOR,          // Added KOR field
+                noKump: currentProfile.NO_KUMP,   // Added NO_KUMP field
+                noIndeks: currentProfile.NO_INDEKS, // Added NO_INDEKS field
+                speech: document.getElementById('speech-slider').value,
+                appearance: document.getElementById('appearance-slider').value,
+                idea: document.getElementById('idea-slider').value,
+                confidence: document.getElementById('confidence-slider').value,
+                comments: document.getElementById('evaluation-comments').value,
+                tln: document.getElementById('tln-checkbox').checked,
+                local: document.getElementById('local-checkbox').checked,
+                fail: document.getElementById('fail-checkbox').checked,
+                timestamp: new Date().toISOString()
+            };
+        
+            try {
+                const response = await fetch('https://script.google.com/macros/s/AKfycbyAubuhQ0nSZ43h1cIJSJZ9vUuxD-73yFwMTE89y5r-7K1reAZ3NZ6ALlXesXqg2h8I/exec', {
+                    method: 'POST',
+                    body: JSON.stringify(evaluationData)
+                });
+        
+                if (response.ok) {
+                    alert('Evaluation saved successfully!');
+                    if (currentIndex < (currentGroup ? filteredProfiles.length : profiles.length) - 1) {
+                        currentIndex++;
+                        displayProfile(currentIndex);
+                    }
+                    resetEvaluationForm();
+                } else {
+                    throw new Error('Failed to save evaluation');
+                }
+            } catch (error) {
+                alert('Error saving evaluation: ' + error.message);
+            }
         }
-    } catch (error) {
-        alert('Error saving evaluation: ' + error.message);
-    }
-    }
 
     function resetEvaluationForm() {
     const sliders = ['speech-slider', 'appearance-slider', 'idea-slider', 'confidence-slider'];
@@ -591,7 +802,11 @@
         });
 
         nextBtn.addEventListener('click', () => {
-            if (currentIndex < profiles.length - 1) {
+            const maxIndex = currentGroup ? 
+                filteredProfiles.length - 1 : 
+                profiles.length - 1;
+            
+            if (currentIndex < maxIndex) {
                 currentIndex++;
                 displayProfile(currentIndex);
             }
@@ -599,6 +814,9 @@
 
         fetchData().then(() => {
             initializeExaminerSelection();
+            // Set home as active by default and show home page
+            document.querySelector('[data-page="home"]').classList.add('active');
+            showHomePage();
         });
     </script>
 </body>
