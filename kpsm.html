@@ -408,6 +408,25 @@
                     <img src="https://i.ibb.co/mWJsy8N/Untitled-design-7.png" alt="Home Logo" class="max-w-xl">
                 </div>
             </div>
+            
+            <!-- Add this just before the profilesContainer div in the HTML -->
+<div id="searchContainer" class="hidden max-w-4xl mx-auto mb-6">
+    <div class="flex">
+        <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Insert Military Number" 
+            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+        >
+        <button 
+            id="searchButton" 
+            class="ml-2 bg-green-600 text-white px-6 py-2 rounded-lg"
+        >
+            Search
+        </button>
+    </div>
+</div>
+            
             <div id="profilesContainer" class="max-w-4xl mx-auto">
                 <!-- Profiles will be added here -->
             </div>
@@ -489,6 +508,13 @@
         }
 
         function displayKorGroups(data) {
+            
+            // In the displayKorGroups function, update the menu item
+            const resultButton = document.querySelector('[data-page="result"]');
+            if (resultButton) {
+            resultButton.querySelector('span').textContent = 'Search';
+            }
+            
             // Get unique KOR values
             const kors = [...new Set(data.map(item => item.KOR))];
             const korList = document.getElementById('korList');
@@ -838,6 +864,37 @@ const qualificationsHTML = `
             nextBtn.disabled = currentIndex === profilesToUse.length - 1;
         }
 
+        // Add to the existing menu item click event listener
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+        // Remove active class from all menu items
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        // Add active class to clicked item
+        item.classList.add('active');
+        
+        const page = item.getAttribute('data-page');
+        switch(page) {
+            case 'home':
+                currentGroup = '';
+                filteredProfiles = [];
+                currentIndex = 0;
+                // Hide search container, show home content
+                document.getElementById('searchContainer').classList.add('hidden');
+                document.getElementById('homeContent').classList.remove('hidden');
+                document.getElementById('profilesContainer').classList.add('hidden');
+                document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+                break;
+            case 'result': // Now 'Search'
+                // Show search container, hide other content
+                document.getElementById('searchContainer').classList.remove('hidden');
+                document.getElementById('homeContent').classList.add('hidden');
+                document.getElementById('profilesContainer').classList.add('hidden');
+                document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+                break;
+        }
+    });
+});
+
         // Add menu functionality
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -955,6 +1012,196 @@ const qualificationsHTML = `
     }
 }
 
+    // Add this function to your existing script
+    function searchProfile() {
+        const searchInput = document.getElementById('searchInput');
+        const searchTerm = searchInput.value.trim();
+    
+        // Find profile by NO_TENTERA
+        const foundProfile = profiles.find(profile => 
+            profile.NO_TENTERA.toLowerCase() === searchTerm.toLowerCase()
+        );
+    
+        if (foundProfile) {
+            // Keep search container visible
+            document.getElementById('searchContainer').classList.remove('hidden');
+            
+            // Show profile container
+            document.getElementById('profilesContainer').classList.remove('hidden');
+            
+            // Hide navigation buttons
+            document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+            
+            // Find the index of the found profile
+            currentIndex = profiles.findIndex(profile => 
+                profile.NO_TENTERA.toLowerCase() === searchTerm.toLowerCase()
+            );
+            
+            // Display the profile without evaluation section
+            displayProfileWithoutEvaluation(currentIndex);
+        } else {
+            alert('No profile found with this NO_TENTERA');
+        }
+    }
+
+function displayProfileWithoutEvaluation(index) {
+    const profile = profiles[index];
+    
+    const sections = [
+        {
+            title: 'Jawatan & Pasukan',
+            fields: ['JAWATAN', 'PASUKAN', 'TAHUN_DI_PSK']
+        },
+        {
+            title: 'Maklumat Perkhidmatan',
+            fields: ['MULA_KHIDMAT', 'TARIKH_TAULIAH', 'TAHUN_KHIDMAT', 'PENGAMBILAN', 'CATATAN']
+        },
+        {
+            title: 'Maklumat Peribadi',
+            fields: ['TARIKH_LAHIR', 'UMUR', 'TEMPAT_LAHIR', 'STATUS', 'AKADEMIK', 'UKA/BMI']
+        }
+    ];
+
+    const qualificationsSection = {
+        title: 'Kursus & Pencapaian',
+        groups: [
+            {
+                title: '',
+                fields: ['MERIT']
+            },
+            {
+                title: 'G2',
+                value: 'Siri ' + formatQualification(profile, 'SIRI_G2', 'KED_G2', 'GRED_G2')
+            },
+            {
+                title: 'G3',
+                value: 'Siri ' + formatQualification(profile, 'SIRI_G3', 'KED_G3', 'GRED_G3')
+            },
+            {
+                title: 'Ketua Kompeni',
+                value: 'Siri ' + formatQualification(profile, 'SIRI_KK', 'KED_KK', 'GRED_KK')
+            },
+            {
+                title: 'Kursus Lain',
+                fields: ['KURSUS_BAHASA', 'KURSUS_UN', 'PENGLIBATAN_LUAR_NEGARA']
+            },
+            {
+                title: 'Ujian ADFELPS',
+                fields: ['SPEAKING', 'LISTENING', 'READING', 'WRITING']
+            }
+        ]
+    };
+
+    // Use the existing HTML generation logic from displayProfile, but remove the evaluationHTML
+    const sectionsHTML = sections.map(section => `
+        <div class="mb-8">
+            <h3 class="section-header text-lg font-semibold">${section.title}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${section.fields.map(field => `
+                    <div class="flex flex-col">
+                        <span class="text-sm text-gray-500">${field.replace(/_/g, ' ')}</span>
+                        <span class="font-medium">${profile[field] || '-'}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    const qualificationsHTML = `
+        <div class="mb-8">
+            <h3 class="section-header text-lg font-semibold">${qualificationsSection.title}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                ${qualificationsSection.groups.map(group => {
+                    if (group.fields) {
+                        return `
+                            <div class="qualification-item">
+                                <h4 class="font-medium text-green-800 mb-2">${group.title}</h4>
+                                ${group.fields.map(field => `
+                                    <div class="mb-2">
+                                        <span class="text-sm text-gray-500">${field.replace(/_/g, ' ')}</span>
+                                        <span class="block font-medium">${profile[field] || '-'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="qualification-item">
+                                <h4 class="font-medium text-green-800 mb-2">${group.title}</h4>
+                                <span class="block font-medium">${group.value}</span>
+                            </div>
+                        `;
+                    }
+                }).join('')}
+            </div>
+        </div>
+    `;
+
+    profilesContainer.innerHTML = `
+        <div class="profile-card p-8">
+            <div class="profile-header text-center mb-4">
+                <h3 class="text-lg-center font-bold">${profile.KOR} - ${profile.NO_KUMP} - Nombor Indeks: ${profile.NO_INDEKS}</h3>
+            </div>
+            <div class="profile-header">
+                <img src="${profile.ImageURL}" alt="${profile.NAMA_PENUH}" class="w-64 h-64 object-cover">
+                <h2>${profile.NAMA_PENUH}</h2>
+            </div>
+            ${sectionsHTML}
+            ${qualificationsHTML}
+        </div>
+    `;
+
+    // Disable navigation buttons
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+}
+
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+        // Remove active class from all menu items
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        // Add active class to clicked item
+        item.classList.add('active');
+        
+        const page = item.getAttribute('data-page');
+        switch(page) {
+            case 'home':
+                currentGroup = '';
+                filteredProfiles = [];
+                currentIndex = 0;
+                // Hide search container, show home content
+                document.getElementById('searchContainer').classList.add('hidden');
+                document.getElementById('homeContent').classList.remove('hidden');
+                document.getElementById('profilesContainer').classList.add('hidden');
+                document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+                break;
+            case 'result': // Now 'Search'
+                // Show search container, hide other content
+                document.getElementById('searchContainer').classList.remove('hidden');
+                document.getElementById('homeContent').classList.add('hidden');
+                document.getElementById('profilesContainer').classList.add('hidden');
+                document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+                break;
+        }
+    });
+});
+
+// Add event listeners for search
+document.addEventListener('DOMContentLoaded', () => {
+    const searchButton = document.getElementById('searchButton');
+    const searchInput = document.getElementById('searchInput');
+
+    // Search on button click
+    searchButton.addEventListener('click', searchProfile);
+
+    // Search on Enter key press
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchProfile();
+        }
+    });
+});
+
     function resetEvaluationForm() {
     const sliders = ['speech-slider', 'appearance-slider', 'idea-slider', 'confidence-slider'];
     sliders.forEach(id => {
@@ -963,6 +1210,8 @@ const qualificationsHTML = `
         document.getElementById(id.replace('-slider', '-value')).textContent = '75%';
     });
 
+
+    
     document.getElementById('evaluation-comments').value = '';
     document.getElementById('tln-checkbox').checked = false;
     document.getElementById('local-checkbox').checked = false;
@@ -999,8 +1248,8 @@ const qualificationsHTML = `
 
 <footer class="footer">
     <div class="footer-content">
-        <p class="copyright">© 2024 Lembaga KPSM dan TLN. All Rights Reserved.</p>
-        <p class="text-sm mt-2 opacity-75">Developed by Infdir</p>
+        <p class="copyright">© 2025 Lembaga KPSM dan TLN. All Rights Reserved.</p>
+        <p class="text-sm mt-2 opacity-75">Developed by ICT-Inf Dir</p>
     </div>
 </footer>
 </body>
