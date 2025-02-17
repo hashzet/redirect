@@ -1031,23 +1031,31 @@ document.querySelectorAll('.menu-item').forEach(item => {
                     
                     // Show success message
                     const successMessage = document.createElement('div');
-                    successMessage.style.position = 'fixed';
-                    successMessage.style.top = '20px';
-                    successMessage.style.right = '20px';
-                    successMessage.style.background = '#454B1B';
-                    successMessage.style.color = 'white';
-                    successMessage.style.padding = '1rem';
-                    successMessage.style.borderRadius = '0.5rem';
-                    successMessage.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                    successMessage.style.zIndex = '1000';
-                    successMessage.textContent = `Evaluation saved successfully! Total Score: ${totalScore}/100`;
-                    
-                    document.body.appendChild(successMessage);
-                    
-                    // Remove success message after 3 seconds
-                    setTimeout(() => {
-                        successMessage.remove();
-                    }, 3000);
+successMessage.style.position = 'fixed';
+successMessage.style.top = '50%';
+successMessage.style.left = '50%';
+successMessage.style.transform = 'translate(-50%, -50%)';
+successMessage.style.background = '#454B1B';
+successMessage.style.color = 'white';
+successMessage.style.padding = '1.5rem 2rem';
+successMessage.style.borderRadius = '0.5rem';
+successMessage.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+successMessage.style.zIndex = '1000';
+successMessage.style.textAlign = 'center';
+successMessage.style.fontSize = '1.1rem';
+successMessage.style.fontWeight = '500';
+successMessage.textContent = `Evaluation saved successfully! Total Score: ${totalScore}/100`;
+
+document.body.appendChild(successMessage);
+
+// Remove success message after 3 seconds
+setTimeout(() => {
+    successMessage.style.transition = 'opacity 0.5s ease-out';
+    successMessage.style.opacity = '0';
+    setTimeout(() => {
+        successMessage.remove();
+    }, 500);
+}, 4000);
         
                     if (currentIndex < (currentGroup ? filteredProfiles.length : profiles.length) - 1) {
                         currentIndex++;
