@@ -39,7 +39,7 @@
   </div>
 
   <script>
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbygkk-7EcYkWyAdZy5zrqEya55N0-jEvhR6WgOAEykGl5927EOZ4250lS8MKd5xdf1i/exec";
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbzjAShOfgYBt9tWaD8JCGQW73nMXK4PIRVceFHjeEtV6jgaqRwRsQC61kz3GUKNdi9K/exec";
 
     function setLoading(isLoading) {
       const spinner = document.getElementById('loadingSpinner');
@@ -144,70 +144,44 @@
         const uka = document.getElementById("uka").value;
         const bmi = document.getElementById("bmi").value;
       
-        console.log("Updating with data:", { sheetName, row, noTentera, kehadiran, noKump, noIndeks, uka, bmi });
-      
         setLoading(true);
-        document.getElementById("updateMessage").innerHTML = `
-          <div class="alert alert-info">Updating record...</div>
-        `;
+        document.getElementById("updateMessage").innerHTML = `<div class="alert alert-info">Updating record...</div>`;
       
         try {
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = scriptUrl;
-          form.target = 'hidden-iframe';
-      
-          const params = {
-            action: 'update',
-            sheetName: sheetName,
-            row: row,
-            noTentera: noTentera,
-            kehadiran: kehadiran,
-            noKump: noKump,
-            noIndeks: noIndeks,
-            uka: uka,
-            bmi: bmi
-          };
-      
-          Object.keys(params).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = params[key];
-            form.appendChild(input);
+          const response = await fetch(scriptUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              action: "update",
+              sheetName: sheetName,
+              row: row,
+              noTentera: noTentera,
+              kehadiran: kehadiran,
+              noKump: noKump,
+              noIndeks: noIndeks,
+              uka: uka,
+              bmi: bmi
+            })
           });
       
-          let iframe = document.querySelector('#hidden-iframe');
-          if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.name = 'hidden-iframe';
-            iframe.id = 'hidden-iframe';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-          }
+          const result = await response.text();
+          console.log("Update Response:", result);
       
-          document.body.appendChild(form);
-          form.submit();
-          document.body.removeChild(form);
-      
-          document.getElementById("updateMessage").innerHTML = `
-            <div class="alert alert-success">Update request sent successfully!</div>
-          `;
+          document.getElementById("updateMessage").innerHTML = `<div class="alert alert-success">${result}</div>`;
       
           setTimeout(() => {
             document.getElementById("searchInput").value = "";
             document.getElementById("result").innerHTML = "";
           }, 3000);
-      
+          
         } catch (error) {
-          console.error("Error:", error);
-          document.getElementById("updateMessage").innerHTML = `
-            <div class="alert alert-danger">Error updating record. Please try again.</div>
-          `;
+          console.error("Update Error:", error);
+          document.getElementById("updateMessage").innerHTML = `<div class="alert alert-danger">Error updating record. Please try again.</div>`;
         } finally {
           setLoading(false);
         }
       }
+      
       
       
   </script>
