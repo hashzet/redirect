@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Entry Form</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { padding: 20px; }
+    .form-group { margin-bottom: 15px; }
+    .result-section { margin-top: 20px; }
+    .loading { opacity: 0.7; pointer-events: none; }
+    #loadingSpinner { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center mb-4">Data Entry Form</h1>
+    <div class="card p-4">
+      <div class="form-group">
+        <label for="sheetSelect" class="form-label">Select Sheet:</label>
+        <select id="sheetSelect" class="form-select">
+          <option value="RAMD">RAMD</option>
+          <option value="RRD">RRD</option>
+          <option value="RS">RS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="searchInput" class="form-label">Enter NO_TENTERA:</label>
+        <input type="text" id="searchInput" class="form-control" placeholder="NO_TENTERA">
+      </div>
+      <button onclick="search()" class="btn btn-primary w-100">
+        <span id="loadingSpinner" class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Search
+      </button>
+    </div>
+
+    <div id="result" class="result-section"></div>
+  </div>
+
+  <script>
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbyCzc5ZoiFJCeZSneYc0fCxytgy21602rN3BpW3i0wYjBPCfkkMeYbak5KLZlDgSLjX/exec";
+
+    function setLoading(isLoading) {
+      const spinner = document.getElementById('loadingSpinner');
+      const buttons = document.querySelectorAll('button');
+      if (isLoading) {
+        spinner.style.display = 'inline-block';
+        buttons.forEach(btn => {
+          btn.classList.add('loading');
+          btn.disabled = true;
+        });
+      } else {
+        spinner.style.display = 'none';
+        buttons.forEach(btn => {
+          btn.classList.remove('loading');
+          btn.disabled = false;
+        });
+      }
+    }
+
+    function showError(message) {
+      document.getElementById("result").innerHTML = `
+        <div class="alert alert-danger">
+          <strong>Error:</strong> ${message}
+        </div>
+      `;
+    }
+
+    function showSuccess(message) {
+      document.getElementById("result").innerHTML = `
+        <div class="alert alert-success">
+          ${message}
+        </div>
+      `;
+    }
+
+    async function search() {
+      const sheetName = document.getElementById("sheetSelect").value;
+      const noTentera = document.getElementById("searchInput").value.trim();
+
+      if (!noTentera) {
+        showError("Please enter a NO_TENTERA.");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch(`${scriptUrl}?action=search&sheetName=${sheetName}&noTentera=${noTentera}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        if (!result.NO_TENTERA) {
+          showError("No record found.");
+          return;
+        }
+
+        document.getElementById("result").innerHTML = `
+          <div class="card p-4">
+            <div class="form-group">
+              <label>KEHADIRAN:</label>
+              <select id="kehadiran" class="form-select">
+                <option value="HADIR" ${result.KEHADIRAN === "HADIR" ? "selected" : ""}>HADIR</option>
+                <option value="TIDAK HADIR" ${result.KEHADIRAN === "TIDAK HADIR" ? "selected" : ""}>TIDAK HADIR</option>
+              </select>
+            </div>
+            <p><strong>NO_TENTERA:</strong> ${result.NO_TENTERA}</p>
+            <p><strong>PANGKAT:</strong> ${result.PANGKAT}</p>
+            <p><strong>NAMA:</strong> ${result.NAMA}</p>
+            <div class="form-group">
+              <label>NO_KUMP:</label>
+              <input type="text" id="noKump" class="form-control" value="${result.NO_KUMP || ''}">
+            </div>
+            <div class="form-group">
+              <label>NO_INDEKS:</label>
+              <input type="text" id="noIndeks" class="form-control" value="${result.NO_INDEKS || ''}">
+            </div>
+            <div class="form-group">
+              <label>BMI:</label>
+              <input type="text" id="bmi" class="form-control" value="${result.BMI || ''}">
+            </div>
+            <div class="form-group">
+              <label>UKA:</label>
+              <input type="text" id="uka" class="form-control" value="${result.UKA || ''}">
+            </div>
+            <button onclick="update('${sheetName}', ${result.row}, '${result.NO_TENTERA}')" class="btn btn-success w-100 mt-3">Update</button>
+            <div id="updateMessage" class="mt-3"></div>
+          </div>
+        `;
+      } catch (error) {
+        console.error("Error:", error);
+        showError("Failed to fetch data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function update(sheetName, row, noTentera) {
+      const kehadiran = document.getElementById("kehadiran").value;
+      const noKump = document.getElementById("noKump").value;
+      const noIndeks = document.getElementById("noIndeks").value;
+      const uka = document.getElementById("uka").value;
+      const bmi = document.getElementById("bmi").value;
+
+      setLoading(true);
+      document.getElementById("updateMessage").innerHTML = `
+        <div class="alert alert-info">Updating record...</div>
+      `;
+
+      try {
+        // Create a form element
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = scriptUrl;
+        form.target = 'hidden-iframe';
+
+        // Add the parameters as hidden fields
+        const params = {
+          action: 'update',
+          sheetName: sheetName,
+          row: row,
+          noTentera: noTentera,
+          kehadiran: kehadiran,
+          noKump: noKump,
+          noIndeks: noIndeks,
+          uka: uka,
+          bmi: bmi
+        };
+
+        Object.keys(params).forEach(key => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = params[key];
+          form.appendChild(input);
+        });
+
+        // Create hidden iframe for the form submission
+        let iframe = document.querySelector('#hidden-iframe');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.name = 'hidden-iframe';
+          iframe.id = 'hidden-iframe';
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+        }
+
+        // Add form to document and submit
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        // Show success message
+        document.getElementById("updateMessage").innerHTML = `
+          <div class="alert alert-success">Update request sent successfully!</div>
+        `;
+
+        // Clear form after 3 seconds
+        setTimeout(() => {
+          document.getElementById("searchInput").value = "";
+          document.getElementById("result").innerHTML = "";
+        }, 3000);
+
+      } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("updateMessage").innerHTML = `
+          <div class="alert alert-danger">Error updating record. Please try again.</div>
+        `;
+      } finally {
+        setLoading(false);
+      }
+    }
+  </script>
+</body>
+</html>
