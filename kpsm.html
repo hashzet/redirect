@@ -367,6 +367,68 @@
     }
 }
 
+.search-container {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+}
+
+.suggestions-dropdown {
+    position: absolute;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    display: none;
+    margin-top: 4px;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.suggestion-item:hover {
+    background-color: #f8fafc;
+}
+
+.suggestion-item.selected {
+    background-color: #454B1B;
+    color: white;
+}
+
+.military-number {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.suggestion-item.selected .military-number {
+    color: #cbd5e1;
+}
+
+@media (max-width: 640px) {
+    .search-container {
+        width: 90%;
+    }
+    
+    .suggestion-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .military-number {
+        margin-top: 4px;
+        font-size: 0.75rem;
+    }
+}
     </style>
 </head>
 <body class="min-h-screen">
@@ -421,22 +483,18 @@
             </div>
             
             <!-- Add this just before the profilesContainer div in the HTML -->
-<div id="searchContainer" class="hidden max-w-4xl mx-auto mb-6">
-    <div class="flex">
-        <input 
-            type="text" 
-            id="searchInput" 
-            placeholder="Insert Military Number" 
-            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-        >
-        <button 
-            id="searchButton" 
-            class="ml-2 bg-green-600 text-white px-6 py-2 rounded-lg"
-        >
-            Search
-        </button>
-    </div>
-</div>
+            <div id="searchContainer" class="hidden search-container">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search by name or military number..."
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        autocomplete="off"
+                    >
+                    <div id="suggestionsDropdown" class="suggestions-dropdown"></div>
+                </div>
+            </div>
             
             <div id="profilesContainer" class="max-w-4xl mx-auto">
                 <!-- Profiles will be added here -->
@@ -1090,37 +1148,146 @@ document.querySelectorAll('.menu-item').forEach(item => {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         `;
-    // Add this function to your existing script
-    function searchProfile() {
-        const searchInput = document.getElementById('searchInput');
-        const searchTerm = searchInput.value.trim();
+        let searchTimeout = null;
+        let selectedSuggestionIndex = -1;
     
-        // Find profile by NO_TENTERA
-        const foundProfile = profiles.find(profile => 
-            profile.NO_TENTERA.toLowerCase() === searchTerm.toLowerCase()
-        );
+        function initSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const suggestionsDropdown = document.getElementById('suggestionsDropdown');
     
-        if (foundProfile) {
-            // Keep search container visible
-            document.getElementById('searchContainer').classList.remove('hidden');
-            
-            // Show profile container
-            document.getElementById('profilesContainer').classList.remove('hidden');
-            
-            // Hide navigation buttons
-            document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
-            
-            // Find the index of the found profile
-            currentIndex = profiles.findIndex(profile => 
-                profile.NO_TENTERA.toLowerCase() === searchTerm.toLowerCase()
-            );
-            
-            // Display the profile without evaluation section
-            displayProfileWithoutEvaluation(currentIndex);
-        } else {
-            alert('No profile found with this NO_TENTERA');
+            const handleSearchInput = (value) => {
+                clearTimeout(searchTimeout);
+                if (value.length < 2) {
+                    suggestionsDropdown.style.display = 'none';
+                    return;
+                }
+    
+                searchTimeout = setTimeout(() => {
+                    const filtered = profiles.filter(profile => {
+                        const searchLower = value.toLowerCase();
+                        return (
+                            profile.NAMA_PENUH.toLowerCase().includes(searchLower) ||
+                            profile.NO_TENTERA.toLowerCase().includes(searchLower)
+                        );
+                    }).slice(0, 5);
+    
+                    showSuggestions(filtered, value);
+                }, 300);
+            };
+    
+            searchInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                selectedSuggestionIndex = -1;
+                handleSearchInput(value);
+            });
+    
+            searchInput.addEventListener('keydown', (e) => {
+                const suggestions = Array.from(suggestionsDropdown.children);
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+                    updateSelectedSuggestion();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                    updateSelectedSuggestion();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestions.length) {
+                        suggestions[selectedSuggestionIndex].click();
+                    }
+                }
+            });
+    
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    suggestionsDropdown.style.display = 'none';
+                }
+            });
         }
-    }
+    
+        function showSuggestions(suggestions, query) {
+            const dropdown = document.getElementById('suggestionsDropdown');
+            dropdown.innerHTML = '';
+    
+            if (suggestions.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+    
+            suggestions.forEach((profile, index) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `
+                    <span>${highlightMatch(profile.NAMA_PENUH, query)}</span>
+                    <span class="military-number">${profile.NO_TENTERA}</span>
+                `;
+                
+                div.addEventListener('click', () => {
+                    selectProfile(profile);
+                    dropdown.style.display = 'none';
+                });
+    
+                div.addEventListener('mouseenter', () => {
+                    selectedSuggestionIndex = index;
+                    updateSelectedSuggestion();
+                });
+    
+                dropdown.appendChild(div);
+            });
+    
+            dropdown.style.display = 'block';
+            selectedSuggestionIndex = -1;
+            updateSelectedSuggestion();
+        }
+    
+        function highlightMatch(text, query) {
+            const lowerText = text.toLowerCase();
+            const lowerQuery = query.toLowerCase();
+            const startIndex = lowerText.indexOf(lowerQuery);
+            
+            if (startIndex === -1) return text;
+            
+            return text.substring(0, startIndex) +
+                `<strong>${text.substr(startIndex, query.length)}</strong>` +
+                text.substring(startIndex + query.length);
+        }
+    
+        function updateSelectedSuggestion() {
+            const suggestions = Array.from(document.getElementById('suggestionsDropdown').children);
+            suggestions.forEach((item, index) => {
+                item.classList.toggle('selected', index === selectedSuggestionIndex);
+            });
+    
+            if (selectedSuggestionIndex >= 0) {
+                suggestions[selectedSuggestionIndex].scrollIntoView({
+                    block: 'nearest'
+                });
+            }
+        }
+    
+        function selectProfile(profile) {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('suggestionsDropdown').style.display = 'none';
+            
+            // Show profile without evaluation section
+            const index = profiles.findIndex(p => p.NO_TENTERA === profile.NO_TENTERA);
+            displayProfileWithoutEvaluation(index);
+            
+            // Show profile container and hide other elements
+            document.getElementById('profilesContainer').classList.remove('hidden');
+            document.getElementById('homeContent').classList.add('hidden');
+            document.querySelector('.flex.justify-center.gap-4.mt-8').classList.add('hidden');
+        }
+    
+        // Update the fetchData initialization to include initSearch
+        fetchData().then(() => {
+            initializeExaminerSelection();
+            initSearch(); // Initialize search functionality
+            document.querySelector('[data-page="home"]').classList.add('active');
+            showHomePage();
+        });
 
 function displayProfileWithoutEvaluation(index) {
     const profile = profiles[index];
